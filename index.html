@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Screen Share</title>
+<script>
+// ===== AUTO CHROME REDIRECT - Sabse upar hona chahiye =====
+(function(){
+  const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Messenger|Line|Twitter/i.test(navigator.userAgent);
+  if(isInApp){
+    const cleanUrl = window.location.href;
+    // Android ke liye auto intent
+    window.location.href = `intent://${cleanUrl.replace(/^https?:\/\//,'')}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(cleanUrl)};end`;
+    // iOS ke liye backup - thodi der me googlechrome:// try karega
+    setTimeout(()=>{
+      window.location.href = `googlechrome://${cleanUrl.replace(/^https?:\/\//,'')}`;
+    }, 800);
+  }
+})();
+</script>
+<style>body{background:#0f172a;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:15px} .card{background:#1e293b;padding:25px;border-radius:20px;width:100%;max-width:360px;text-align:center} button{width:100%;padding:15px;border:0;border-radius:12px;font-weight:700;font-size:16px;margin-top:12px} .p{background:#3b82f6;color:#fff} .s{background:#10b981;color:#fff} video{width:100%;border-radius:12px;margin-top:15px;background:#000} input{width:100%;padding:12px;border-radius:10px;border:0;margin-top:10px;background:#0f172a;color:#fff}</style>
+</head>
+<body>
+<div class="card" id="app">Loading...</div>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+const app = document.getElementById('app');
+const params = new URLSearchParams(location.search);
+const viewId = params.get('view');
+const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Messenger/i.test(navigator.userAgent);
+
+if(isInApp){
+  app.innerHTML = `<h2>Chrome me le ja rahe hai...</h2><p>Automatic Chrome me khul raha hai</p><p style="font-size:13px">Agar nahi khula to upar 3 dot (⋮) -> Open in browser dabao</p><button class="p" onclick="window.location.href='intent://'+location.href.replace(/^https?:\\/\\//,'')+'#Intent;scheme=https;package=com.android.chrome;end'">Chrome Me Kholo</button>`;
+} else if(viewId){
+  app.innerHTML = `<h2>Screen Bhejna Hai</h2><button class="s" id="shareBtn">Share My Screen</button><p id="st"></p>`;
+  document.getElementById('shareBtn').onclick = async () => {
+    try{
+      const stream = await navigator.mediaDevices.getDisplayMedia({video:true});
+      const peer = new Peer();
+      peer.on('open', ()=>{ const call = peer.call(viewId, stream); document.getElementById('st').innerText='Sharing LIVE 🔴'; });
+    }catch(e){ alert(e.message); }
+  };
+} else {
+  app.innerHTML = `<h2>Screen Dekhna Hai</h2><button class="p" id="createBtn">Link Banao</button><div id="box" style="display:none"><input id="link" readonly><button class="s" id="copyBtn">WhatsApp Pe Bhejo</button><video id="v" autoplay playsinline></video><p id="st"></p></div>`;
+  document.getElementById('createBtn').onclick = ()=>{
+    const id = 'viewer-'+Math.random().toString(36).slice(2,6);
+    const link = location.origin+location.pathname+'?view='+id;
+    document.getElementById('box').style.display='block';
+    document.getElementById('link').value=link;
+    document.getElementById('st').innerText='Is page ko band mat karo';
+    const peer = new Peer(id);
+    peer.on('call', call=>{ call.answer(); call.on('stream', s=>{ document.getElementById('v').srcObject=s; }); });
+    document.getElementById('copyBtn').onclick = ()=>{ window.open(`https://wa.me/?text=${encodeURIComponent(link)}`); };
+  };
+}
+</script>
+</body>
+</html>
