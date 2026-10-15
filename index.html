@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direct Screen View</title>
+<style>
+body{background:#0f172a;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px;font-family:sans-serif}
+.card{background:#1e293b;padding:24px;border-radius:18px;width:100%;max-width:400px;text-align:center}
+.btn{background:#38bdf8;color:#000;border:none;padding:15px;border-radius:10px;font-weight:700;width:100%;margin-top:10px}
+#video{width:100%;margin-top:12px;border-radius:10px;display:none;background:#000}
+.box{background:#000;padding:10px;border-radius:8px;margin-top:10px;word-break:break-all;font-size:11px;border:1px dashed #38bdf8;display:none}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>Screen Share</h1>
+<div id="controls"></div>
+<video id="video" autoplay playsinline></video>
+<div id="linkBox" class="box"></div>
+<p id="status" style="font-size:11px;color:#94a3b8;margin-top:8px"></p>
+</div>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const viewId=new URLSearchParams(location.search).get('view');
+const video=document.getElementById('video'),controls=document.getElementById('controls'),linkBox=document.getElementById('linkBox'),statusEl=document.getElementById('status');
+const setStatus=t=>statusEl.textContent=t;
+const $=id=>document.getElementById(id);
+if(viewId){
+ controls.innerHTML=`<p>Screen share request</p><button id="shareBtn" class="btn">Share My Screen</button>`;
+ $('shareBtn').onclick=async()=>{
+  const stream=await navigator.mediaDevices.getDisplayMedia({video:true});
+  video.srcObject=stream;video.style.display='block';
+  const peer=new Peer();
+  peer.on('open',()=>{peer.call(viewId,stream);setStatus("Sharing ON");});
+ };
+}else{
+ controls.innerHTML=`<button id="createBtn" class="btn">Link Banao</button>`;
+ $('createBtn').onclick=()=>{
+  const id='viewer-'+Math.random().toString(36).substring(2,6);
+  const peer=new Peer(id);
+  peer.on('open',pid=>{
+   const link=location.origin+location.pathname+'?view='+pid;
+   linkBox.style.display='block';linkBox.innerHTML=link+`<br><br><button onclick="navigator.clipboard.writeText('${link}')">Copy Link</button>`;
+  });
+  peer.on('call',call=>{call.answer();call.on('stream',s=>{video.srcObject=s;video.style.display='block';});});
+ };
+}
+</script>
+</body>
+</html>
